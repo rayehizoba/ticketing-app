@@ -1,13 +1,24 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  StatusBar,
+} from 'react-native';
+import TextStyles from './shared/styles/text';
+import AppButton from "./shared/components/button";
 
 export default class App extends React.Component {
   render() {
     return (
       <View style={styles.container}>
-        <Text>Open up App.js to start working on your app!</Text>
-        <Text>Changes you make will automatically reload.</Text>
-        <Text>Shake your phone to open the developer menu.</Text>
+        <StatusBar barStyle="light-content" />
+        <Image style={styles.backgroundOverlay}
+          source={require('./assets/background-overlay.png')} />
+
+        <Text style={[TextStyles.captionText, TextStyles.whiteText]}>By clicking Register, you agree to our terms of use</Text>
+        <AppButton title="Register" />
       </View>
     );
   }
@@ -16,8 +27,15 @@ export default class App extends React.Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#030F29',
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 15,
   },
+  backgroundOverlay: {
+    position: 'absolute',
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  }
 });
