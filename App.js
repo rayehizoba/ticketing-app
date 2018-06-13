@@ -1,14 +1,14 @@
 import React from 'react';
 import { createStackNavigator } from 'react-navigation';
 import RegisterScreen from './screens/RegisterScreen';
-import GetStartedScreen from './screens/GetStartedScreen';
+import HomeScreen from './screens/HomeScreen';
 
 const RootStack = createStackNavigator({
   Register: {
     screen: RegisterScreen
   },
-  GetStarted: {
-    screen: GetStartedScreen
+  Home: {
+    screen: HomeScreen
   },
 }, {
   headerMode: 'none',

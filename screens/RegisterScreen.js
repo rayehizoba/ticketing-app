@@ -25,6 +25,7 @@ import { Font } from 'expo';
 export default class RegisterScreen extends React.Component {
   state = {
     step: 1,
+    showLogin: false,
     date: undefined,
     gender: undefined,
     genderOptions: [
@@ -77,6 +78,18 @@ export default class RegisterScreen extends React.Component {
       this.setState({step: 1});
     }
   }
+  gotoLogin (showLogin = true) {
+    Keyboard.dismiss();
+    Animated.timing(this.animation, {
+      toValue: 0,
+      duration: 100,
+      easing: Easing.ease
+    }).start();
+    this.setState({step: 1, showLogin});
+  }
+  doLogin() {
+    this.props.navigation.replace('Home');
+  }
 
   render() {
     const step1Opacity = this.animation.interpolate({
@@ -104,7 +117,8 @@ export default class RegisterScreen extends React.Component {
               {/* STEP 1 */}
               <Animated.View style={{opacity: step1Opacity}} >
                 <TextInput
-                  style={styles.formControl}
+                  style={[styles.formControl, {opacity: this.state.showLogin ? 0 : 1}]}
+                  enabled={!this.state.showLogin}
                   placeholder="Enter name"
                   placeholderTextColor="white"
                   keyboardAppearance="dark"
@@ -128,11 +142,13 @@ export default class RegisterScreen extends React.Component {
                   returnKeyType="done"
                   secureTextEntry={true}
                 />
-                <View style={{flexDirection: 'row', justifyContent: 'center'}} >
+                <View style={{flexDirection: 'row', justifyContent: 'center', opacity: this.state.showLogin ? 0 : 1}} >
                   <Text style={[TextStyles.captionText, TextStyles.whiteText]}>By clicking Register, you agree to our </Text>
-                  <TouchableOpacity>
-                    <Text style={[TextStyles.captionText, TextStyles.whiteText]}>terms of use</Text>
-                  </TouchableOpacity>
+                  {!this.state.showLogin &&
+                    <TouchableOpacity>
+                      <Text style={[TextStyles.captionText, TextStyles.whiteText]}>terms of use</Text>
+                    </TouchableOpacity>
+                  }
                 </View>
               </Animated.View>
 
@@ -200,13 +216,26 @@ export default class RegisterScreen extends React.Component {
               </Animated.View>
             </Animated.View>
             <View style={styles.bottomArea} >
-              <AppButton title={this.state.step === 1 ? 'Register' : 'Get started'} onPress={() => this.gotoStep2()} />
+              {!this.state.showLogin &&
+                <AppButton title={this.state.step === 1 ? 'Register' : 'Get started'} onPress={() => this.gotoStep2()} />
+              }
+              {this.state.showLogin &&
+                <AppButton title="Log in" onPress={() => this.doLogin()} />
+              }
 
               <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
-                <TouchableOpacity style={[styles.loginBtn]} >
-                  <Text style={[TextStyles.whiteText, TextStyles.captionText]} >Have an account, </Text>
-                  <Text style={[TextStyles.whiteText, TextStyles.captionText, {opacity: .7}]} >Log in</Text>
-                </TouchableOpacity>
+                {!this.state.showLogin &&
+                  <TouchableOpacity style={[styles.loginBtn]} onPress={() => this.gotoLogin()} >
+                    <Text style={[TextStyles.whiteText, TextStyles.captionText]} >Have an account, </Text>
+                    <Text style={[TextStyles.whiteText, TextStyles.captionText, {opacity: .7}]} >Log in</Text>
+                  </TouchableOpacity>
+                }
+                {this.state.showLogin &&
+                  <TouchableOpacity style={[styles.loginBtn]} onPress={() => this.gotoLogin(false)} >
+                    <Text style={[TextStyles.whiteText, TextStyles.captionText]} >Don't have an account, </Text>
+                    <Text style={[TextStyles.whiteText, TextStyles.captionText, {opacity: .7}]} >Sign up</Text>
+                  </TouchableOpacity>
+                }
                 <TouchableOpacity style={[styles.helpIcon]} >
                   <Image source={helpIcon} style={{height: 30, width: 30}} />
                 </TouchableOpacity>
@@ -257,6 +286,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   loginBtn: {
-    flexDirection:'row'
+    flexDirection:'row',
+    paddingVertical: 5
   }
 });
