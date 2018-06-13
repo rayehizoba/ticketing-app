@@ -5,10 +5,12 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
+const fontFamily = 'OpenSansRegular';
+
 export default class AppButton extends React.Component {
   render() {
     return (
-      <TouchableOpacity style={styles.button} onPress={() => {}}>
+      <TouchableOpacity style={styles.button} onPress={this.props.onPress}>
         <Text>{this.props.title}</Text>
       </TouchableOpacity>
     );
@@ -26,5 +28,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#030F29',
+    fontSize: 18,
+    fontFamily,
   }
 });
