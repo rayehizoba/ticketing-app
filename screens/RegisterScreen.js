@@ -14,12 +14,11 @@ import {
 } from 'react-native';
 import TextStyles from '../shared/styles/text';
 import AppButton from "../shared/components/button";
-import backgroundOverlay from '../assets/background-overlay.png'
-import helpIcon from '../assets/help-icon.svg'
+import backgroundOverlay from '../assets/background-overlay.png';
+import helpIcon from '../assets/help-icon.svg';
 import Image from 'react-native-remote-svg';
 import DatePicker from 'react-native-datepicker';
 import RNPickerSelect from 'react-native-picker-select';
-import { Font } from 'expo';
 import styles from './RegistrationScreenStyles';
 
 export default class RegisterScreen extends React.Component {
@@ -27,7 +26,6 @@ export default class RegisterScreen extends React.Component {
     registrationStep: 1,
     showLoginForm: false,
     gender: undefined,
-    fontLoaded: false,
     dob: undefined,
   };
   componentWillMount() {
@@ -41,12 +39,6 @@ export default class RegisterScreen extends React.Component {
         }
       }
     })
-  }
-  async componentDidMount() {
-    await Font.loadAsync({
-      'OpenSansRegular': require('../assets/fonts/Open_Sans/OpenSans-Regular.ttf'),
-    });
-    this.setState({fontLoaded: true});
   }
   gotoRegistrationStep2 () {
     Keyboard.dismiss();
@@ -113,39 +105,37 @@ export default class RegisterScreen extends React.Component {
         <StatusBar barStyle="light-content" />
         <RNImage style={styles.backgroundOverlay} source={backgroundOverlay} />
 
-        {this.state.fontLoaded &&
-          <View style={[styles.main]} {...this.PanResponder.panHandlers}>
-            <Animated.View style={[styles.form, {transform: [{scale: formScale}]}]} >
-              <RegistrationStep1 {...registrationStep1Props()} />
-              <RegistrationStep2 {...registrationStep2Props()} />
-            </Animated.View>
-            <View style={styles.bottomArea} >
-              {(() => this.state.showLoginForm ?
-                <AppButton title="Log in" onPress={() => this.doLogin()} /> :
-                <AppButton title={registrationBtnText} onPress={() => this.gotoRegistrationStep2()} />
-              )()}
+        <View style={[styles.main]} {...this.PanResponder.panHandlers}>
+          <Animated.View style={[styles.form, {transform: [{scale: formScale}]}]} >
+            <RegistrationStep1 {...registrationStep1Props()} />
+            <RegistrationStep2 {...registrationStep2Props()} />
+          </Animated.View>
+          <View style={styles.bottomArea} >
+            {(() => this.state.showLoginForm ?
+              <AppButton title="Log in" onPress={() => this.doLogin()} /> :
+              <AppButton title={registrationBtnText} onPress={() => this.gotoRegistrationStep2()} />
+            )()}
 
-              <View style={{
-                flexDirection: 'row', alignItems: 'center',
-                justifyContent: 'space-between'
-              }}>
-                {(() => this.state.showLoginForm ?
-                  <TouchableOpacity style={[styles.actionBtn]} onPress={() => this.showLoginForm(false)} >
-                    <Text style={[TextStyles.whiteText, TextStyles.captionText]} >Don't have an account, </Text>
-                    <Text style={[TextStyles.whiteText, TextStyles.captionText, {opacity: .7}]} >Sign up</Text>
-                  </TouchableOpacity> :
-                  <TouchableOpacity style={[styles.actionBtn]} onPress={() => this.showLoginForm()} >
-                    <Text style={[TextStyles.whiteText, TextStyles.captionText]} >Have an account, </Text>
-                    <Text style={[TextStyles.whiteText, TextStyles.captionText, {opacity: .7}]} >Log in</Text>
-                  </TouchableOpacity>
-                )()}
-                <TouchableOpacity style={[styles.helpIcon]} >
-                  <Image source={helpIcon} style={{height: 30, width: 30}} />
+            <View style={{
+              flexDirection: 'row', alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              {(() => this.state.showLoginForm ?
+                <TouchableOpacity style={[styles.actionBtn]} onPress={() => this.showLoginForm(false)} >
+                  <Text style={[TextStyles.captionText, TextStyles.whiteText]} >Don't have an account, </Text>
+                  <Text style={[TextStyles.captionText, TextStyles.whiteText, {opacity: .7}]} >Sign up</Text>
+                </TouchableOpacity> :
+                <TouchableOpacity style={[styles.actionBtn]} onPress={() => this.showLoginForm()} >
+                  <Text style={[TextStyles.captionText, TextStyles.whiteText]} >Have an account, </Text>
+                  <Text style={[TextStyles.captionText, TextStyles.whiteText, {opacity: .7}]} >Log in</Text>
                 </TouchableOpacity>
-              </View>
+              )()}
+              <TouchableOpacity style={[styles.helpIcon]} >
+                <Image source={helpIcon} style={{height: 30, width: 30}} />
+              </TouchableOpacity>
             </View>
           </View>
-        }
+        </View>
       </KeyboardAvoidingView>
     );
   }
@@ -210,8 +200,8 @@ class RegistrationStep2 extends React.Component {
     return (
       <Animated.View pointerEvents={this.props.registrationStep === 2 ? 'auto' : 'none'}
         style={{opacity, position: 'absolute', top: 0, left: 0, right: 0, bottom: 0}} >
-        <Text style={[TextStyles.whiteText, TextStyles.headingText]} >Birthday tickets on us?</Text>
-        <Text style={[TextStyles.whiteText, TextStyles.headingText, {paddingBottom: 75}]} >Why not...</Text>
+        <Text style={[TextStyles.headingText, TextStyles.whiteText]} >Birthday tickets on us?</Text>
+        <Text style={[TextStyles.headingText, TextStyles.whiteText, {paddingBottom: 75}]} >Why not...</Text>
 
         <DatePicker
           style={{width: '100%'}}
