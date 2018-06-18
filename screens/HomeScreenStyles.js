@@ -10,10 +10,16 @@ export const styles = StyleSheet.create({
     },
     mapView: {
       flex: 1.5,
+      marginBottom: -5,
     },
     scrollView: {
       flex: 1,
       backgroundColor: '#fff',
+      borderTopLeftRadius: 6,
+      borderTopRightRadius: 6,
+      shadowColor: 'black',
+      shadowRadius: 5,
+      shadowOpacity: .15
     },
     startPadding: {
       paddingLeft: 30,

@@ -1,25 +1,21 @@
 import React, { Component } from "react";
 import {
-  Text,
-  View,
-  Animated,
-  Image as RNImage,
-  Dimensions,
-  TouchableOpacity,
-  TouchableHighlight,
-  StatusBar,
+  Text, View, Animated, Image as RNImage,
+  Dimensions, TouchableOpacity,
+  TouchableWithoutFeedback, StatusBar, Easing
 } from "react-native";
 import MapView from "react-native-maps";
 import avatar from "../assets/avatar.jpg";
+import addIcon from "../assets/add-icon.svg";
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo';
 import { getStatusBarHeight } from 'react-native-status-bar-height';
-import { Drawer } from 'native-base';
 import { styles, CARD_WIDTH } from './HomeScreenStyles';
 import TextStyles from '../shared/styles/text';
 import Image from 'react-native-remote-svg';
 import checkIcon from '../assets/check.svg';
 import DrawerContent from '../shared/components/DrawerContent';
+import Drawer from '../shared/components/drawer';
 
 const statusBarHeight = getStatusBarHeight();
 const { width, height } = Dimensions.get("window");
@@ -68,10 +64,16 @@ export default class HomeScreen extends Component {
       longitudeDelta: 0.040142817690068,
     },
   };
-
+  constructor(props) {
+    super(props);
+    this.handelPressIn = this.handelPressIn.bind(this);
+    this.handelPressOut = this.handelPressOut.bind(this);
+  }
   componentWillMount() {
     this.index = 0;
     this.animation = new Animated.Value(0);
+    this.screenLoadAnimation = new Animated.Value(0);
+    this.animatedPress = new Animated.Value(1);
   }
   componentDidMount() {
     // We should detect when scrolling has stopped then animate
@@ -101,17 +103,36 @@ export default class HomeScreen extends Component {
         }
       }, 10);
     });
+
+    Animated.timing(this.screenLoadAnimation, {
+      toValue: 1,
+      duration: 800,
+      easing: Easing.out(Easing.exp)
+    }).start();
   }
   closeDrawer = () => {
-    this.drawer._root.close();
+    this.drawer.closeDrawer();
   };
   openDrawer = () => {
-    this.drawer._root.open();
+    this.drawer.openDrawer();
   };
   doLogout = () => {
     this.props.navigation.replace('Register');
   }
+  handelPressIn() {
+    Animated.spring(this.animatedPress, {
+      toValue: .92
+    }).start();
+  }
+  handelPressOut() {
+    Animated.spring(this.animatedPress, {
+      toValue: 1
+    }).start();
+  }
   render() {
+    const animatedStyle = {
+      transform: [{ scale: this.animatedPress }]
+    };
     const interpolations = this.state.markers.map((marker, index) => {
       const inputRange = [
         (index - 1) * CARD_WIDTH,
@@ -140,16 +161,32 @@ export default class HomeScreen extends Component {
       });
       return { scale, opacity, colorOpacity, cardScale };
     });
+    const screenInterpolations = () => {
+      const opacity = this.screenLoadAnimation.interpolate({
+        inputRange: [0.5, 1],
+        outputRange: [0, 1],
+      });
+      const opacity2 = this.screenLoadAnimation.interpolate({
+        inputRange: [0, 0.75, 1],
+        outputRange: [0, 1, 1],
+      });
+      const translateX = this.screenLoadAnimation.interpolate({
+        inputRange: [0, 1],
+        outputRange: [200, 0],
+      });
+      const translateY = this.screenLoadAnimation.interpolate({
+        inputRange: [0, 1],
+        outputRange: [10, 0],
+      });
+      return {opacity, translateX, translateY};
+    }
 
     return (
       <Drawer
-        ref={(ref) => { this.drawer = ref; }}
-        panCloseMask={0.3}
         content={<DrawerContent doLogout={() => this.doLogout()} />}
-        onClose={() => this.closeDrawer()} >
-        <StatusBar barStyle="dark-content" />
-
-        <View style={styles.container}>
+        ref={(ref) => { this.drawer = ref; }}>
+        <Animated.View style={[ {transform: [{translateY: screenInterpolations().translateY}],
+          opacity: screenInterpolations().opacity2}, styles.container]}>
           <View style={{
             position: 'absolute', top: 0, 
             height: 60 + statusBarHeight, 
@@ -205,15 +242,17 @@ export default class HomeScreen extends Component {
           </MapView>
 
           <View style={styles.scrollView}>
-            <TouchableHighlight>
-              <View style={{backgroundColor: '#f23535', width: 45, height: 45, borderRadius: 22, position: 'absolute',
-                  right: 15, marginTop: -22, alignItems: 'center', justifyContent: 'center'}} >
-                <Ionicons name="ios-add" size={45} style={{color: 'white'}} />
+            <TouchableWithoutFeedback>
+              <View style={{backgroundColor: '#F23434', width: 45, height: 45, borderRadius: 22.5, position: 'absolute',
+                right: 15, marginTop: -22, alignItems: 'center', justifyContent: 'center',
+                shadowColor: 'black', shadowOffset: {width: 0, height: 5}, shadowOpacity: .15}} >
+                <Image source={addIcon} style={{height: "75%", width: "75%", alignSelf: 'center',}} />
               </View>
-            </TouchableHighlight>
+            </TouchableWithoutFeedback>
 
             <View style={{height: 90, flexDirection: 'row', padding: 15, alignItems: "center", paddingBottom: 30}}>
-              <View style={{flex: 0.5, backgroundColor: '#efefef', height: 45, width: 45, borderRadius: 22, overflow: "hidden", marginRight: 15}}>
+              <View style={{flex: 0.5, backgroundColor: '#efefef', height: 45, width: 45,
+                borderRadius: 22, overflow: "hidden", marginRight: 15}}>
                 <RNImage source={avatar} style={{height: "100%", width: "100%"}} />
               </View>
               <View style={{flex: 3}}>
@@ -225,7 +264,9 @@ export default class HomeScreen extends Component {
             </View>
 
             <Animated.ScrollView
-              style={{flex: 1, overflow: 'visible'}}
+              style={{flex: 1, overflow: 'visible', 
+              opacity: screenInterpolations().opacity,
+              transform: [{translateX: screenInterpolations().translateX}]}}
               horizontal
               scrollEventThrottle={1}
               showsHorizontalScrollIndicator={false}
@@ -255,30 +296,34 @@ export default class HomeScreen extends Component {
                   ],
                 };
                 return (
-                  <Animated.View style={[styles.card, cardScaleStyle ]} key={index}>
-                    <View style={styles.cardImage}>
-                      <RNImage source={marker.image} style={{flex: 1, width: '100%', height: '100%'}} resizeMode="cover" />
-                    </View>
-                    <View style={styles.textContent}>
-                      <Text numberOfLines={1} style={[TextStyles.bodyText]}>{marker.title}</Text>
-                      <Text numberOfLines={1} style={[
-                        TextStyles.captionText, TextStyles.fadedText, {paddingBottom: 15}]}>{marker.description}</Text>
-                      <Text numberOfLines={1} style={[
-                        TextStyles.smallText, TextStyles.fadedText]}>{marker.dateTime}</Text>
-                      {marker.isFeatured &&
-                        <View style={styles.featuredLabel} >
-                          <Image source={checkIcon} style={styles.featuredLabel__Icon} />
-                          <Text style={[TextStyles.smallText, TextStyles.whiteText]} >Featured</Text>
+                  <TouchableWithoutFeedback onPressIn={this.handelPressIn} onPressOut={this.handelPressOut} key={index}>
+                    <Animated.View style={animatedStyle} >
+                      <Animated.View style={[styles.card, cardScaleStyle ]}>
+                        <View style={styles.cardImage}>
+                          <RNImage source={marker.image} style={{flex: 1, width: '100%', height: '100%'}} resizeMode="cover" />
                         </View>
-                      }
-                    </View>
-                  </Animated.View>
+                        <View style={styles.textContent}>
+                          <Text numberOfLines={1} style={[TextStyles.bodyText]}>{marker.title}</Text>
+                          <Text numberOfLines={1} style={[
+                            TextStyles.captionText, TextStyles.fadedText, {paddingBottom: 15}]}>{marker.description}</Text>
+                          <Text numberOfLines={1} style={[
+                            TextStyles.smallText, TextStyles.fadedText]}>{marker.dateTime}</Text>
+                          {marker.isFeatured &&
+                            <View style={styles.featuredLabel} >
+                              <Image source={checkIcon} style={styles.featuredLabel__Icon} />
+                              <Text style={[TextStyles.smallText, TextStyles.whiteText]} >Featured</Text>
+                            </View>
+                          }
+                        </View>
+                      </Animated.View>
+                    </Animated.View>
+                  </TouchableWithoutFeedback>
                 );
               })}
             </Animated.ScrollView>
           </View>
 
-        </View>
+        </Animated.View>
       </Drawer>
     );
   }
