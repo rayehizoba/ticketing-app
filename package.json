@@ -28,6 +28,7 @@
     "react-native-picker-select": "^3.1.2",
     "react-native-remote-svg": "^1.2.0",
     "react-native-status-bar-height": "^2.0.0",
-    "react-navigation": "^2.3.1"
+    "react-navigation": "^2.3.1",
+    "watchman": "^1.0.0"
   }
 }
