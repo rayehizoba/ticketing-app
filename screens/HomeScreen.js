@@ -10,12 +10,14 @@ import addIcon from "../assets/add-icon.svg";
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient, BlurView } from 'expo';
 import { getStatusBarHeight } from 'react-native-status-bar-height';
-import { styles, CARD_WIDTH } from './HomeScreenStyles';
+import { styles, CARD_WIDTH } from './HomeStyles';
 import TextStyles from '../shared/styles/text';
 import Image from 'react-native-remote-svg';
 import checkIcon from '../assets/check.svg';
 import DrawerContent from '../shared/components/DrawerContent';
 import Drawer from '../shared/components/drawer';
+import { EventCard } from './HomeEventCard';
+import { EventView } from './HomeEventView';
 
 const statusBarHeight = getStatusBarHeight();
 const { width, height } = Dimensions.get("window");
@@ -85,10 +87,11 @@ export default class HomeScreen extends Component {
     },
     isDisplayEvent: false,
     visibleEvent: undefined,
-    scale: new Animated.Value(1),
+    focusedEventIndex: 0,
   };
   constructor(props) {
     super(props);
+    this.animatedScale = new Animated.Value(1);
   }
   componentWillMount() {
     this.index = 0;
@@ -112,15 +115,13 @@ export default class HomeScreen extends Component {
         if (this.index !== index) {
           this.index = index;
           const { coordinate } = this.state.markers[index];
+          const { latitudeDelta, longitudeDelta } = this.state.region;
           this.map.animateToRegion(
-            {
-              ...coordinate,
-              latitudeDelta: this.state.region.latitudeDelta,
-              longitudeDelta: this.state.region.longitudeDelta,
-            },
+            { ...coordinate, latitudeDelta, longitudeDelta },
             350
           );
         }
+        this.setState({focusedEventIndex: index});
       }, 10);
     });
 
@@ -130,33 +131,24 @@ export default class HomeScreen extends Component {
       easing: Easing.out(Easing.exp)
     }).start();
   }
-  closeDrawer = () => {
-    this.drawer.closeDrawer();
-  }
-  openDrawer = () => {
-    this.drawer.openDrawer();
-  }
-  doLogout = () => {
-    this.props.navigation.replace('Register');
-  }
+  closeDrawer = () => this.drawer.closeDrawer();
+  openDrawer = () => this.drawer.openDrawer();
+  doLogout = () => this.props.navigation.replace('Register');
   showEvent = evt => {
+    console.log(this.state.focusedEventIndex);
     setTimeout(() => {
       this.setState({isDisplayEvent: true, visibleEvent: evt});
-      Animated.spring(this.state.scale, {
-        toValue: .95
-      }).start();
-    }, 100);
+      // Animated.spring(this.animatedScale, { toValue: .95 }).start();
+    }, 0);
   }
   beforeHideEvent = () => {
-    Animated.timing(this.state.scale, {
+    Animated.timing(this.animatedScale, {
       toValue: 1,
       duration: 300,
       easing: Easing.out(Easing.quad)
     }).start();
   }
-  hideEvent = () => {
-    this.setState({isDisplayEvent: false, visibleEvent: undefined});
-  }
+  hideEvent = () => this.setState({isDisplayEvent: false, visibleEvent: undefined});
   render() {
     const interpolations = this.state.markers.map((marker, index) => {
       const inputRange = [
@@ -210,7 +202,7 @@ export default class HomeScreen extends Component {
           opacity: screenInterpolations().opacity}, styles.container]}>
           {renderToolbar(this.openDrawer)}
 
-          <Animated.View style={{flex: 1, transform: [{scale: this.state.scale}]}} >
+          <Animated.View style={{flex: 1, transform: [{scale: this.animatedScale}]}} >
             <MapView
               ref={map => this.map = map}
               initialRegion={this.state.region}
@@ -242,7 +234,7 @@ export default class HomeScreen extends Component {
               })}
             </MapView>
 
-            <View style={styles.scrollView}>
+            <View style={styles.scrollView} onLayout={ev => this.setState({scrollViewContainerTop: ev.nativeEvent.layout.y})} >
               <TouchableWithoutFeedback>
                 <View style={{backgroundColor: '#F23434', width: 45, height: 45, borderRadius: 22.5, position: 'absolute',
                   right: 15, marginTop: -22, alignItems: 'center', justifyContent: 'center',
@@ -264,7 +256,7 @@ export default class HomeScreen extends Component {
                 </View>
               </View>
 
-              <Animated.ScrollView
+              <Animated.ScrollView onLayout={ev => this.setState({scrollViewTop: ev.nativeEvent.layout.y})}
                 style={{flex: 1, overflow: 'visible', opacity: screenInterpolations().opacity,
                 transform: [{translateX: screenInterpolations().translateX}]}}
                 horizontal scrollEventThrottle={1} showsHorizontalScrollIndicator={false}
@@ -286,7 +278,7 @@ export default class HomeScreen extends Component {
                 {this.state.markers.map((mapMarker, index) => {
                   const scale = interpolations[index].cardScale;
                   const onShowEvent = this.showEvent;
-                  const props = {scale, mapMarker, onShowEvent};
+                  const props = {scale, mapMarker, onShowEvent, index};
                   return <EventCard key={index} {...props} />;
                 })}
               </Animated.ScrollView>
@@ -294,191 +286,12 @@ export default class HomeScreen extends Component {
           </Animated.View>
 
           {this.state.isDisplayEvent && <EventView event={this.state.visibleEvent}
-            beforeCloseEvent={this.beforeHideEvent}
-            onCloseEvent={this.hideEvent} />}
+            scrollViewTop={this.state.scrollViewContainerTop + this.state.scrollViewTop}
+            beforeCloseEvent={this.beforeHideEvent} parentScale={this.animatedScale}
+            onCloseEvent={this.hideEvent} xOffset={30} />}
         </Animated.View>
 
       </Drawer>
-    );
-  }
-}
-class EventCard extends React.Component {
-  state = {};
-  constructor(props) {
-    super(props);
-    this.handlePressIn = this.handlePressIn.bind(this);
-    this.handlePressOut = this.handlePressOut.bind(this);
-    this.handlePress = this.handlePress.bind(this);
-  }
-  onLayout = (e) => {
-    this.setState({
-      width: e.nativeEvent.layout.width,
-      height: e.nativeEvent.layout.height,
-      x: e.nativeEvent.layout.x,
-      y: e.nativeEvent.layout.y
-    }, () => console.log(this.state));
-  }
-  componentWillMount() {
-    this.animatedPress = new Animated.Value(1);
-  }
-  componentDidMount() {
-    this.view.measureInWindow((x, y, width, height) => {
-      console.log(x, y, width, height)
-    });
-  }
-  handlePressIn() {
-    // Animated.spring(this.animatedPress, {
-    //   toValue: .92
-    // }).start();
-  }
-  handlePressOut() {
-    // Animated.spring(this.animatedPress, {
-    //   toValue: 1
-    // }).start();
-  }
-  handlePress() {
-    // console.log(this.state);
-    this.props.onShowEvent(this.state);
-  }
-  render() {
-    const animatedStyle = {
-      transform: [{ scale: this.animatedPress }]
-    };
-    const cardScaleStyle = {
-      transform: [
-        {
-          scale: this.props.scale
-        }
-      ],
-    };
-
-    return (
-      <TouchableWithoutFeedback onPressIn={this.handlePressIn} onPressOut={this.handlePressOut}
-        onPress={this.handlePress}>
-        <Animated.View style={[animatedStyle]} >
-          <Animated.View style={[styles.card, cardScaleStyle ]} onLayout={this.onLayout}
-            ref={view => this.view = view} >
-            {/* delete me */}
-            <View style={{position: 'absolute', width: '100%', height: '100%',
-             backgroundColor: 'blue', zIndex: 10, borderRadius: 6}} />
-
-
-            <View style={styles.cardImage}>
-              <RNImage source={this.props.mapMarker.image} style={{flex: 1, width: '100%', height: '100%'}} resizeMode="cover" />
-            </View>
-            <View style={styles.textContent}>
-              <Text numberOfLines={1} style={[TextStyles.bodyText]}>{this.props.mapMarker.title}</Text>
-              <Text numberOfLines={1} style={[
-                TextStyles.captionText, TextStyles.fadedText, {paddingBottom: 15}]}>{this.props.mapMarker.description}</Text>
-              <Text numberOfLines={1} style={[
-                TextStyles.smallText, TextStyles.fadedText]}>{this.props.mapMarker.dateTime}</Text>
-              {this.props.mapMarker.isFeatured &&
-                <View style={styles.featuredLabel} >
-                  <Image source={checkIcon} style={styles.featuredLabel__Icon} />
-                  <Text style={[TextStyles.smallText, TextStyles.whiteText]} >Featured</Text>
-                </View>
-              }
-            </View>
-          </Animated.View>
-        </Animated.View>
-      </TouchableWithoutFeedback>
-    );
-  }
-}
-class EventView extends React.Component {
-  state = {
-    blurIntensity: new Animated.Value(0),
-    top: new Animated.Value(height-190),
-    left: new Animated.Value(30),
-    width: new Animated.Value(this.props.event.width),
-    height: new Animated.Value(this.props.event.height),
-    borderRadius: new Animated.Value(6),
-    opacity: new Animated.Value(0),
-  }
-  constructor(props) {
-    super(props);
-  }
-  componentWillMount() {
-    Animated.spring(this.state.opacity, {toValue: 1}).start();
-    Animated.timing(this.state.blurIntensity, {
-      toValue: 100,
-      duration: 300,
-    }).start();
-    setTimeout(() => {
-      Animated.timing(this.state.top, {
-        toValue: 0,
-        duration: 300,
-        easing: Easing.out(Easing.cubic)
-      }).start();
-      Animated.timing(this.state.left, {
-        toValue: 0,
-        duration: 300,
-        easing: Easing.out(Easing.cubic)
-      }).start();
-      Animated.timing(this.state.width, {
-        toValue: width,
-        duration: 300,
-        easing: Easing.out(Easing.cubic)
-      }).start();
-      Animated.timing(this.state.height, {
-        toValue: height,
-        duration: 300,
-        easing: Easing.out(Easing.cubic)
-      }).start();
-      Animated.timing(this.state.borderRadius, {
-        toValue: 0,
-        duration: 500,
-        easing: Easing.out(Easing.cubic)
-      }).start();
-    }, 100);
-    console.log(this.props.event);
-  }
-  closeEvent() {
-    this.props.beforeCloseEvent();
-    Animated.timing(this.state.blurIntensity, {
-      toValue: 0,
-      duration: 350,
-    }).start();
-    Animated.timing(this.state.top, {
-      toValue: height-190,
-      duration: 300,
-      easing: Easing.inOut(Easing.quad)
-    }).start();
-    Animated.timing(this.state.left, {
-      toValue: 30,
-      duration: 300,
-      easing: Easing.inOut(Easing.quad)
-    }).start();
-    Animated.timing(this.state.width, {
-      toValue: 220,
-      duration: 300,
-      easing: Easing.inOut(Easing.quad)
-    }).start();
-    Animated.timing(this.state.height, {
-      toValue: 165,
-      duration: 300,
-      easing: Easing.inOut(Easing.quad)
-    }).start();
-    Animated.timing(this.state.borderRadius, {
-      toValue: 6,
-      duration: 300,
-      easing: Easing.inOut(Easing.quad)
-    }).start(() => {
-      this.props.onCloseEvent();
-    });
-  }
-  render() {
-    return (
-      <AnimatedBlurView style={{flex: 1, position: 'absolute', top: 0, bottom: 0, left: 0, right: 0}}
-        intensity={this.state.blurIntensity} >
-        <TouchableWithoutFeedback onPress={() => this.closeEvent()} >
-          <Animated.View style={{position: 'absolute', top: this.state.top, left: this.state.left,
-            width: this.state.width, height: this.state.height, backgroundColor: 'blue',
-            borderRadius: this.state.borderRadius, shadowColor: "#000", shadowRadius: 15,
-            shadowOpacity: .15, shadowOffset: { x: 15, y: -15 }, opacity: this.state.opacity}} >
-          </Animated.View>
-        </TouchableWithoutFeedback>
-      </AnimatedBlurView>
     );
   }
 }

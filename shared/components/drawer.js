@@ -38,20 +38,21 @@ export default class Drawer extends React.Component {
     });
   }
   openDrawer() {
+    this.setState({isDrawerOpen: true});
     Animated.timing(this.position, {
       toValue: {x: 0, y: 0},
       duration: 500,
       easing: Easing.out(Easing.cubic)
     }).start();
-    this.setState({isDrawerOpen: true});
   }
   closeDrawer() {
     Animated.timing(this.position, {
       toValue: {x: -width, y: 0},
-      duration: 500,
-      easing: Easing.out(Easing.cubic)
-    }).start();
-    this.setState({isDrawerOpen: false});
+      duration: 350,
+      easing: Easing.out(Easing.sin)
+    }).start(() => {
+      this.setState({isDrawerOpen: false});
+    });
   }
   render() {
     const overlayOpacity = this.position.x.interpolate({
@@ -59,7 +60,7 @@ export default class Drawer extends React.Component {
       outputRange: [0, 0.4]
     });
     return (
-      <View style={{flex: 1, backgroundColor: 'white'}} >
+      <View style={{flex: 1, backgroundColor: 'black'}} >
         <StatusBar animated={true} barStyle={this.state.isDrawerOpen ? 'light-content': 'dark-content'}
           hidden={this.state.isDrawerOpen && !isIphoneX()} showHideTransition="slide" />
 
@@ -80,7 +81,7 @@ export default class Drawer extends React.Component {
           }} >
           <View style={{width: '75%', backgroundColor: 'white', shadowColor: 'black',
             shadowRadius: 5, shadowOpacity: .25}} >
-            {this.props.content}
+            {this.state.isDrawerOpen && this.props.content}
           </View>
           <TouchableWithoutFeedback onPress={() => this.closeDrawer()}>
             <View style={{flex: 1, width: '25%'}} />
