@@ -21,25 +21,41 @@ import { EventView } from './HomeEventView';
 const statusBarHeight = getStatusBarHeight();
 const { width, height } = Dimensions.get("window");
 const AnimatedIonicon = Animated.createAnimatedComponent(Ionicons);
-const AnimatedMatIcon = Animated.createAnimatedComponent(MaterialIcons);
+// const AnimatedMatIcon = Animated.createAnimatedComponent(MaterialIcons);
 
-const renderToolbar = (openDrawer, iconColor, showBackBtn) => {
+const renderToolbar = (openDrawer, iconColor, iconTransform) => {
+  const menuOpacity = iconTransform.interpolate({
+    inputRange: [0, .5],
+    outputRange: [1, 0]
+  });
+  const menuScale = iconTransform.interpolate({
+    inputRange: [0, .5],
+    outputRange: [1, 0.5]
+  });
+  const backOpacity = iconTransform.interpolate({
+    inputRange: [.5, 1],
+    outputRange: [0, 1]
+  });
+  const backScale = iconTransform.interpolate({
+    inputRange: [.5, 1],
+    outputRange: [0.5, 1]
+  });
   return (
     <View style={{
       position: 'absolute', top: 0, height: 60 + statusBarHeight, 
       zIndex: 2, flex: 1, width, paddingHorizontal: 15, paddingTop: statusBarHeight,
       alignItems: 'center', flexDirection: 'row', justifyContent: "space-between"
     }} pointerEvents="box-none" >
-      {!showBackBtn &&
-        <TouchableOpacity onPress={openDrawer}>
-          <AnimatedIonicon name="ios-menu-outline" size={30} style={{color: iconColor}} />
+      <View style={{justifyContent: 'center',}} >
+        <TouchableOpacity onPress={openDrawer} style={{position: 'absolute'}} >
+          <AnimatedIonicon name="ios-menu-outline" size={30} style={{color: iconColor, opacity: menuOpacity,
+            transform: [{scale: menuScale}]}} />
         </TouchableOpacity>
-      }
-      {showBackBtn &&
-        <TouchableOpacity onPress={() => {}}>
-          <AnimatedIonicon name="ios-arrow-round-back" size={45} style={{color: iconColor}} />
+        <TouchableOpacity onPress={openDrawer} style={{position: 'absolute'}} >
+          <AnimatedIonicon name="ios-arrow-round-back" size={45} style={{color: iconColor, opacity: backOpacity,
+            transform: [{scale: backScale}]}} />
         </TouchableOpacity>
-      }
+      </View>
       <TouchableOpacity>
         <AnimatedIonicon name="ios-search-outline" size={30} style={{color: iconColor}} />
       </TouchableOpacity>
@@ -97,6 +113,7 @@ export default class HomeScreen extends Component {
     super(props);
     this.animatedScale = new Animated.Value(1);
     this.animatedToolbarIconColor = new Animated.Value(0);
+    this.animatedToolbarIconTransform = new Animated.Value(0);
   }
   componentWillMount() {
     this.index = 0;
@@ -143,11 +160,13 @@ export default class HomeScreen extends Component {
     this.setState({isDisplayEvent: true, visibleEvent: evt});
     Animated.spring(this.animatedScale, { toValue: .97 }).start();
     Animated.spring(this.animatedToolbarIconColor, { toValue: 1 }).start();
+    Animated.spring(this.animatedToolbarIconTransform, { toValue: 1 }).start();
   }
   beforeHideEvent = (duration = 300) => {
     if (!duration) {
       Animated.spring(this.animatedScale, { toValue: .96 }).start();
       Animated.spring(this.animatedToolbarIconColor, { toValue: 1 }).start();
+      Animated.spring(this.animatedToolbarIconTransform, { toValue: 1 }).start();
       return;
     }
     Animated.timing(this.animatedScale, {
@@ -160,6 +179,7 @@ export default class HomeScreen extends Component {
       duration,
       easing: Easing.out(Easing.quad)
     }).start();
+    Animated.spring(this.animatedToolbarIconTransform, { toValue: 0 }).start();
   }
   hideEvent = () => this.setState({isDisplayEvent: false, visibleEvent: undefined});
   render() {
@@ -218,7 +238,7 @@ export default class HomeScreen extends Component {
           {transform: [{translateY: screenInterpolations().translateY}],
           opacity: screenInterpolations().opacity}, styles.container]}>
 
-          {renderToolbar(this.openDrawer, toolbarIconColor, this.state.isDisplayEvent)}
+          {renderToolbar(this.openDrawer, toolbarIconColor, this.animatedToolbarIconTransform)}
 
           <Animated.View style={{flex: 1, transform: [{scale: this.animatedScale}]}} >
             <LinearGradient pointerEvents="none"
