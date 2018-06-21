@@ -1,25 +1,12 @@
-import React, { Component } from "react";
+import React from "react";
 import {
   Text, View, Animated, Image as RNImage,
-  Dimensions, TouchableOpacity,
-  TouchableWithoutFeedback, StatusBar, Easing,
+  TouchableWithoutFeedback,
 } from "react-native";
-import MapView from "react-native-maps";
-import avatar from "../assets/avatar.jpg";
-import addIcon from "../assets/add-icon.svg";
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient, BlurView } from 'expo';
-import { getStatusBarHeight } from 'react-native-status-bar-height';
-import { styles, CARD_WIDTH } from './HomeStyles';
+import { styles } from './HomeStyles';
 import TextStyles from '../shared/styles/text';
 import Image from 'react-native-remote-svg';
 import checkIcon from '../assets/check.svg';
-import DrawerContent from '../shared/components/DrawerContent';
-import Drawer from '../shared/components/drawer';
-
-const statusBarHeight = getStatusBarHeight();
-const { width, height } = Dimensions.get("window");
-const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
 export class EventCard extends React.Component {
   state = {
@@ -36,7 +23,8 @@ export class EventCard extends React.Component {
     });
   }
   handlePress() {
-    this.props.onShowEvent(this.state);
+    this.props.onShowEvent &&
+    this.props.onShowEvent({...this.state, ...this.props});
   }
   render() {
     const cardScaleStyle = {
@@ -49,12 +37,12 @@ export class EventCard extends React.Component {
 
     return (
       <TouchableWithoutFeedback onPress={this.handlePress}>
-        <Animated.View >
-          <Animated.View style={[styles.card, cardScaleStyle ]} onLayout={this.onLayout} >
+        <View>
+          <Animated.View style={[styles.card, cardScaleStyle, this.props.style]} onLayout={this.onLayout} >
             {/* delete me */}
-            <View style={{position: 'absolute', width: '100%', height: '100%',
-             backgroundColor: 'blue', zIndex: 10, borderRadius: 6}} />
-             {/* delete me */}
+            {/* <View style={{position: 'absolute', width: '100%', height: '100%',
+              backgroundColor: 'blue', zIndex: 10, borderRadius: 6}} /> */}
+              {/* delete me */}
 
 
             <View style={styles.cardImage}>
@@ -74,7 +62,7 @@ export class EventCard extends React.Component {
               }
             </View>
           </Animated.View>
-        </Animated.View>
+        </View>
       </TouchableWithoutFeedback>
     );
   }

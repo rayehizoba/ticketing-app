@@ -2,18 +2,17 @@ import React, { Component } from "react";
 import {
   Text, View, Animated, Image as RNImage,
   Dimensions, TouchableOpacity,
-  TouchableWithoutFeedback, StatusBar, Easing
+  TouchableWithoutFeedback, Easing
 } from "react-native";
 import MapView from "react-native-maps";
 import avatar from "../assets/avatar.jpg";
 import addIcon from "../assets/add-icon.svg";
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient, BlurView } from 'expo';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo';
 import { getStatusBarHeight } from 'react-native-status-bar-height';
 import { styles, CARD_WIDTH } from './HomeStyles';
 import TextStyles from '../shared/styles/text';
 import Image from 'react-native-remote-svg';
-import checkIcon from '../assets/check.svg';
 import DrawerContent from '../shared/components/DrawerContent';
 import Drawer from '../shared/components/drawer';
 import { EventCard } from './HomeEventCard';
@@ -21,23 +20,28 @@ import { EventView } from './HomeEventView';
 
 const statusBarHeight = getStatusBarHeight();
 const { width, height } = Dimensions.get("window");
-const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
-const renderToolbar = (openDrawer) => {
+const AnimatedIonicon = Animated.createAnimatedComponent(Ionicons);
+const AnimatedMatIcon = Animated.createAnimatedComponent(MaterialIcons);
+
+const renderToolbar = (openDrawer, iconColor, showBackBtn) => {
   return (
     <View style={{
       position: 'absolute', top: 0, height: 60 + statusBarHeight, 
       zIndex: 2, flex: 1, width, paddingHorizontal: 15, paddingTop: statusBarHeight,
       alignItems: 'center', flexDirection: 'row', justifyContent: "space-between"
-    }} >
-      <LinearGradient
-        colors={['rgba(255,255,255,1)', 'rgba(255,255,255,0)']}
-        style={{position: 'absolute', left: 0, right: 0, top: 0, height: 100}}
-      />
-      <TouchableOpacity onPress={openDrawer}>
-        <Ionicons name="ios-menu" size={30} />
-      </TouchableOpacity>
+    }} pointerEvents="box-none" >
+      {!showBackBtn &&
+        <TouchableOpacity onPress={openDrawer}>
+          <AnimatedIonicon name="ios-menu-outline" size={30} style={{color: iconColor}} />
+        </TouchableOpacity>
+      }
+      {showBackBtn &&
+        <TouchableOpacity onPress={() => {}}>
+          <AnimatedIonicon name="ios-arrow-round-back" size={45} style={{color: iconColor}} />
+        </TouchableOpacity>
+      }
       <TouchableOpacity>
-        <Ionicons name="ios-search" size={30} />
+        <AnimatedIonicon name="ios-search-outline" size={30} style={{color: iconColor}} />
       </TouchableOpacity>
     </View>
   );
@@ -92,6 +96,7 @@ export default class HomeScreen extends Component {
   constructor(props) {
     super(props);
     this.animatedScale = new Animated.Value(1);
+    this.animatedToolbarIconColor = new Animated.Value(0);
   }
   componentWillMount() {
     this.index = 0;
@@ -135,16 +140,24 @@ export default class HomeScreen extends Component {
   openDrawer = () => this.drawer.openDrawer();
   doLogout = () => this.props.navigation.replace('Register');
   showEvent = evt => {
-    console.log(this.state.focusedEventIndex);
-    setTimeout(() => {
-      this.setState({isDisplayEvent: true, visibleEvent: evt});
-      // Animated.spring(this.animatedScale, { toValue: .95 }).start();
-    }, 0);
+    this.setState({isDisplayEvent: true, visibleEvent: evt});
+    Animated.spring(this.animatedScale, { toValue: .97 }).start();
+    Animated.spring(this.animatedToolbarIconColor, { toValue: 1 }).start();
   }
-  beforeHideEvent = () => {
+  beforeHideEvent = (duration = 300) => {
+    if (!duration) {
+      Animated.spring(this.animatedScale, { toValue: .96 }).start();
+      Animated.spring(this.animatedToolbarIconColor, { toValue: 1 }).start();
+      return;
+    }
     Animated.timing(this.animatedScale, {
       toValue: 1,
-      duration: 300,
+      duration,
+      easing: Easing.out(Easing.quad)
+    }).start();
+    Animated.timing(this.animatedToolbarIconColor, {
+      toValue: 0,
+      duration,
       easing: Easing.out(Easing.quad)
     }).start();
   }
@@ -193,6 +206,10 @@ export default class HomeScreen extends Component {
       });
       return {opacity, translateX, translateY};
     }
+    const toolbarIconColor = this.animatedToolbarIconColor.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['black', 'white']
+    });
     return (
       <Drawer
         content={<DrawerContent doLogout={() => this.doLogout()} />}
@@ -200,9 +217,15 @@ export default class HomeScreen extends Component {
         <Animated.View style={[
           {transform: [{translateY: screenInterpolations().translateY}],
           opacity: screenInterpolations().opacity}, styles.container]}>
-          {renderToolbar(this.openDrawer)}
+
+          {renderToolbar(this.openDrawer, toolbarIconColor, this.state.isDisplayEvent)}
 
           <Animated.View style={{flex: 1, transform: [{scale: this.animatedScale}]}} >
+            <LinearGradient pointerEvents="none"
+              colors={['rgba(255,255,255,1)', 'rgba(255,255,255,0)']}
+              style={{position: 'absolute', left: 0, right: 0, top: 0, height: 100, zIndex: 1}}
+            />
+
             <MapView
               ref={map => this.map = map}
               initialRegion={this.state.region}

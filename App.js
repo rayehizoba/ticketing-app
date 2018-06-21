@@ -45,7 +45,6 @@ export default class App extends React.Component {
     });
   }
   render() {
-    console.log(this.state.isReady);
     if (!this.state.isReady) {
       return (
         <AppLoading
