@@ -23,7 +23,7 @@ const { width, height } = Dimensions.get("window");
 const AnimatedIonicon = Animated.createAnimatedComponent(Ionicons);
 // const AnimatedMatIcon = Animated.createAnimatedComponent(MaterialIcons);
 
-const renderToolbar = (openDrawer, iconColor, iconTransform) => {
+const renderToolbar = (openDrawer, iconColor, iconTransform, backBtnAction, isDisplayEvent) => {
   const menuOpacity = iconTransform.interpolate({
     inputRange: [0, .5],
     outputRange: [1, 0]
@@ -40,22 +40,25 @@ const renderToolbar = (openDrawer, iconColor, iconTransform) => {
     inputRange: [.5, 1],
     outputRange: [0.5, 1]
   });
+  const btnAction = () => {
+    if (isDisplayEvent) {
+      backBtnAction();
+    } else {
+      openDrawer();
+    }
+  }
   return (
     <View style={{
       position: 'absolute', top: 0, height: 60 + statusBarHeight, 
       zIndex: 2, flex: 1, width, paddingHorizontal: 15, paddingTop: statusBarHeight,
       alignItems: 'center', flexDirection: 'row', justifyContent: "space-between"
     }} pointerEvents="box-none" >
-      <View style={{justifyContent: 'center',}} >
-        <TouchableOpacity onPress={openDrawer} style={{position: 'absolute'}} >
-          <AnimatedIonicon name="ios-menu-outline" size={30} style={{color: iconColor, opacity: menuOpacity,
-            transform: [{scale: menuScale}]}} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={openDrawer} style={{position: 'absolute'}} >
-          <AnimatedIonicon name="ios-arrow-round-back" size={45} style={{color: iconColor, opacity: backOpacity,
-            transform: [{scale: backScale}]}} />
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity style={{justifyContent: 'center'}} onPress={btnAction} style={{justifyContent: 'center'}} >
+        <AnimatedIonicon name="ios-arrow-round-back" size={45} style={{color: iconColor, opacity: backOpacity,
+          transform: [{scale: backScale}], position: 'absolute'}} />
+        <AnimatedIonicon name="ios-menu-outline" size={30} style={{color: iconColor, opacity: menuOpacity,
+          transform: [{scale: menuScale}], position: 'absolute'}} />
+      </TouchableOpacity>
       <TouchableOpacity>
         <AnimatedIonicon name="ios-search-outline" size={30} style={{color: iconColor}} />
       </TouchableOpacity>
@@ -150,17 +153,28 @@ export default class HomeScreen extends Component {
     Animated.timing(this.screenLoadAnimation, {
       toValue: 1,
       duration: 900,
-      easing: Easing.out(Easing.exp)
+      easing: Easing.out(Easing.sin)
     }).start();
   }
   closeDrawer = () => this.drawer.closeDrawer();
   openDrawer = () => this.drawer.openDrawer();
   doLogout = () => this.props.navigation.replace('Register');
   showEvent = evt => {
-    this.setState({isDisplayEvent: true, visibleEvent: evt});
-    Animated.spring(this.animatedScale, { toValue: .97 }).start();
-    Animated.spring(this.animatedToolbarIconColor, { toValue: 1 }).start();
-    Animated.spring(this.animatedToolbarIconTransform, { toValue: 1 }).start();
+    const {focusedEventIndex} = this.state;
+    const itemIndex = evt.index;
+    let duration = 0;
+    if (focusedEventIndex !== itemIndex) {
+      // scroll card to view
+      this._scrollView._component.scrollTo({y: 0, x: itemIndex * CARD_WIDTH});
+      duration = 400;
+    }
+    setTimeout(() => {
+      this.setState({isDisplayEvent: true, visibleEvent: evt}, () => {
+        Animated.spring(this.animatedScale, { toValue: .97 }).start();
+        Animated.spring(this.animatedToolbarIconColor, { toValue: 1 }).start();
+        Animated.spring(this.animatedToolbarIconTransform, { toValue: 1 }).start();
+      });
+    }, duration);
   }
   beforeHideEvent = (duration = 300) => {
     if (!duration) {
@@ -182,6 +196,9 @@ export default class HomeScreen extends Component {
     Animated.spring(this.animatedToolbarIconTransform, { toValue: 0 }).start();
   }
   hideEvent = () => this.setState({isDisplayEvent: false, visibleEvent: undefined});
+  backBtnAction = () => {
+    this._eventView.closeEvent();
+  }
   render() {
     const interpolations = this.state.markers.map((marker, index) => {
       const inputRange = [
@@ -238,7 +255,8 @@ export default class HomeScreen extends Component {
           {transform: [{translateY: screenInterpolations().translateY}],
           opacity: screenInterpolations().opacity}, styles.container]}>
 
-          {renderToolbar(this.openDrawer, toolbarIconColor, this.animatedToolbarIconTransform)}
+          {renderToolbar(this.openDrawer, toolbarIconColor, this.animatedToolbarIconTransform,
+            this.backBtnAction, this.state.isDisplayEvent)}
 
           <Animated.View style={{flex: 1, transform: [{scale: this.animatedScale}]}} >
             <LinearGradient pointerEvents="none"
@@ -299,9 +317,13 @@ export default class HomeScreen extends Component {
                 </View>
               </View>
 
-              <Animated.ScrollView onLayout={ev => this.setState({scrollViewTop: ev.nativeEvent.layout.y})}
-                style={{flex: 1, overflow: 'visible', opacity: screenInterpolations().opacity,
-                transform: [{translateX: screenInterpolations().translateX}]}}
+              <Animated.ScrollView 
+                ref={scrollView => this._scrollView = scrollView}
+                onLayout={ev => this.setState({scrollViewTop: ev.nativeEvent.layout.y})}
+                style={{
+                  flex: 1, overflow: 'visible', opacity: screenInterpolations().opacity,
+                  transform: [{translateX: screenInterpolations().translateX}]
+                }}
                 horizontal scrollEventThrottle={1} showsHorizontalScrollIndicator={false}
                 snapToInterval={CARD_WIDTH} snapToAlignment="start" decelerationRate="fast"
                 onScroll={Animated.event(
@@ -328,7 +350,8 @@ export default class HomeScreen extends Component {
             </View>
           </Animated.View>
 
-          {this.state.isDisplayEvent && <EventView event={this.state.visibleEvent}
+          {this.state.isDisplayEvent && <EventView ref={eventView => this._eventView = eventView}
+            event={this.state.visibleEvent}
             scrollViewTop={this.state.scrollViewContainerTop + this.state.scrollViewTop}
             beforeCloseEvent={this.beforeHideEvent} parentScale={this.animatedScale}
             onCloseEvent={this.hideEvent} xOffset={30} />}

@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import {
   Animated, Dimensions, Easing, PanResponder,
-  Image
+  Image, StatusBar
 } from "react-native";
 import { BlurView } from 'expo';
 import { EventCard } from './HomeEventCard';
@@ -20,6 +20,11 @@ export class EventView extends React.Component {
       onStartShouldSetPanResponder: (evt, gestureState) => true,
       onPanResponderMove:(evt, gestureState) => {
         let animatedValue = 1 - gestureState.dy / height * 0.8;
+        if (animatedValue >= 0.9 && animatedValue < 0.97) {
+          StatusBar.setBarStyle('dark-content');
+        } else if (animatedValue >= 0.97) {
+          StatusBar.setBarStyle('light-content');
+        }
         if (animatedValue < 0.9) {
           this.props.beforeCloseEvent();
         } else {
@@ -39,7 +44,7 @@ export class EventView extends React.Component {
     });
   }
   componentDidMount() {
-    console.log(this.props.event);
+    // console.log(this.props.event);
     this.openEvent();
   }
   openEvent(duration = 250) {
@@ -47,7 +52,9 @@ export class EventView extends React.Component {
       toValue: 1,
       duration,
       easing: Easing.out(Easing.quad)
-    }).start();
+    }).start(() => {
+      StatusBar.setBarStyle('light-content');
+    });
   }
   closeEvent() {
     this.props.beforeCloseEvent();
@@ -57,6 +64,7 @@ export class EventView extends React.Component {
       easing: Easing.out(Easing.quad)
     }).start(() => {
       this.props.onCloseEvent();
+      StatusBar.setBarStyle('dark-content');
     });
   }
   render() {

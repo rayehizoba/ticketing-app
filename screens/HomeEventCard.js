@@ -15,6 +15,7 @@ export class EventCard extends React.Component {
   constructor(props) {
     super(props);
     this.handlePress = this.handlePress.bind(this);
+    // console.log(this.props)
   }
   onLayout = (e) => {
     this.setState({
@@ -39,12 +40,6 @@ export class EventCard extends React.Component {
       <TouchableWithoutFeedback onPress={this.handlePress}>
         <View>
           <Animated.View style={[styles.card, cardScaleStyle, this.props.style]} onLayout={this.onLayout} >
-            {/* delete me */}
-            {/* <View style={{position: 'absolute', width: '100%', height: '100%',
-              backgroundColor: 'blue', zIndex: 10, borderRadius: 6}} /> */}
-              {/* delete me */}
-
-
             <View style={styles.cardImage}>
               <RNImage source={this.props.mapMarker.image} style={{flex: 1, width: '100%', height: '100%'}} resizeMode="cover" />
             </View>

@@ -25,7 +25,7 @@ export const styles = StyleSheet.create({
       paddingLeft: 30,
     },
     endPadding: {
-      paddingRight: width - CARD_WIDTH,
+      paddingRight: width - CARD_WIDTH - 30,
     },
     card: {
       elevation: 2,

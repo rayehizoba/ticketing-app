@@ -60,7 +60,7 @@ export default class Drawer extends React.Component {
       outputRange: [0, 0.4]
     });
     return (
-      <View style={{flex: 1, backgroundColor: 'black'}} >
+      <View style={{flex: 1, backgroundColor: 'white'}} >
         <StatusBar animated={true} barStyle={this.state.isDrawerOpen ? 'light-content': 'dark-content'}
           hidden={this.state.isDrawerOpen && !isIphoneX()} showHideTransition="slide" />
 

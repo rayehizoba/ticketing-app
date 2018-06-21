@@ -31,6 +31,10 @@ export default class App extends React.Component {
   async _loadAssetsAsync() {
     const imageAssets = cacheImages([
       require('./assets/add-icon.svg'),
+      require('./assets/my-tickets-icon.svg'),
+      require('./assets/payments-icon.svg'),
+      require('./assets/notifications-icon.svg'),
+      require('./assets/settings-icon.svg'),
       require('./assets/avatar.jpg'),
       require('./assets/background-overlay.png'),
       require('./assets/Beyonce-Formation-World-Tour.jpg'),
