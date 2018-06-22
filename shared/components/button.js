@@ -17,18 +17,44 @@ export default class AppButton extends React.Component {
   }
 }
 
+export class RoundButton extends React.Component {
+  render() {
+    return (
+      <TouchableOpacity style={styles.roundButton} onPress={this.props.onPress}>
+        <Text style={styles.roundButtonText} >{this.props.title}</Text>
+      </TouchableOpacity>
+    );
+  }
+}
+
+const buttonStyle = {
+  alignItems: 'center',
+  justifyContent: 'center',
+  height: 45,
+  width: '100%',
+};
+const buttonTextStyle = {
+  fontSize: 18,
+  fontFamily,
+};
 const styles = StyleSheet.create({
   button: {
     backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 45,
-    width: '100%',
-    borderRadius: 4
+    borderRadius: 4,
+    ...buttonStyle
   },
   buttonText: {
     color: '#030F29',
-    fontSize: 18,
-    fontFamily,
+    ...buttonTextStyle
+  },
+  roundButton: {
+    ...buttonStyle,
+    backgroundColor: '#FFD013',
+    borderRadius: 30
+  },
+  roundButtonText: {
+    color: '#030F29',
+    ...buttonTextStyle,
+    fontSize: 12,
   }
 });
